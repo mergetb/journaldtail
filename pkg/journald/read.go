@@ -37,6 +37,10 @@ func (r *Reader) Seek() error {
 	return errors.Wrapf(err, "could not seek to cursor %s", last)
 }
 
+func (r *Reader) ToTail() error {
+	return r.src.SeekTail()
+}
+
 // Next blocks until the next journal entry is available
 func (r *Reader) Next() (*sdjournal.JournalEntry, error) {
 	advanced, err := r.advance()
@@ -47,7 +51,8 @@ func (r *Reader) Next() (*sdjournal.JournalEntry, error) {
 		r.src.Wait(sdjournal.IndefiniteWait)
 		advanced, err = r.advance()
 		if advanced != true {
-			return nil, errors.New("finished wait but could not advance")
+			// seems to kill logging when logging should not be killed
+			//return nil, errors.New("finished wait but could not advance")
 		}
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to advance after wait")

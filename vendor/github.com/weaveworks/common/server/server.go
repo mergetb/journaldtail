@@ -38,14 +38,14 @@ type Config struct {
 	HTTPServerWriteTimeout        time.Duration `yaml:"http_server_write_timeout"`
 	HTTPServerIdleTimeout         time.Duration `yaml:"http_server_idle_timeout"`
 
-	GPRCServerMaxRecvMsgSize       int  `yaml:"grpc_server_max_recv_msg_size"`
-	GRPCServerMaxSendMsgSize       int  `yaml:"grpc_server_max_send_msg_size"`
-	GPRCServerMaxConcurrentStreams uint `yaml:"grpc_server_max_concurrent_streams"`
-
 	GRPCOptions          []grpc.ServerOption            `yaml:"-"`
 	GRPCMiddleware       []grpc.UnaryServerInterceptor  `yaml:"-"`
 	GRPCStreamMiddleware []grpc.StreamServerInterceptor `yaml:"-"`
 	HTTPMiddleware       []middleware.Interface         `yaml:"-"`
+
+	GPRCServerMaxRecvMsgSize       int  `yaml:"grpc_server_max_recv_msg_size"`
+	GRPCServerMaxSendMsgSize       int  `yaml:"grpc_server_max_send_msg_size"`
+	GPRCServerMaxConcurrentStreams uint `yaml:"grpc_server_max_concurrent_streams"`
 
 	LogLevel logging.Level     `yaml:"log_level"`
 	Log      logging.Interface `yaml:"-"`
@@ -150,11 +150,13 @@ func New(cfg Config) (*Server, error) {
 
 	// Setup HTTP server
 	router := mux.NewRouter()
+	if cfg.PathPrefix != "" {
+		// Expect metrics and pprof handlers to be prefixed with server's path prefix.
+		// e.g. /loki/metrics or /loki/debug/pprof
+		router = router.PathPrefix(cfg.PathPrefix).Subrouter()
+	}
 	if cfg.RegisterInstrumentation {
 		RegisterInstrumentation(router)
-	}
-	if cfg.PathPrefix != "" {
-		router = router.PathPrefix(cfg.PathPrefix).Subrouter()
 	}
 	httpMiddleware := []middleware.Interface{
 		middleware.Tracer{
