@@ -1,11 +1,12 @@
-.PHONY: journaldtail docker
+.PHONY: journaldtail
 
 # Set HUBUSER to build an image that you can push to a registry
 HUBUSER ?= local
 
-# build inside the Docker container, then make a runtime image
+journaldtail:
+	go build -o cmd/journaldtail cmd/main.go
+
+# builds inside the Docker container, then make a runtime image
 docker:
 	docker build -t $(HUBUSER)/journaldtail .
 
-journaldtail:
-	go build -o journaldtail main.go
