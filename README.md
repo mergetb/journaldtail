@@ -6,6 +6,17 @@ Any comments and suggestions are welcome.
 
 I made this project since the promtail community is not sure if promtail will support journald. (see:  https://github.com/grafana/loki/pull/26#issuecomment-446961639 )
 
+## Usage
+
+```shell
+journaldtail -h
+Usage of ./journaldtail:
+  -history
+    	collect all available logs from beginning of journal
+  -server string
+    	loki server address (default "http://localhost:3100/api/prom/push")
+```
+
 ## Building
 
 To build this, you'll need cgo and the systemd headers installed - for example, on a Debian based system, `apt-get install libsystemd-dev`.
