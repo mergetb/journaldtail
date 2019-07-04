@@ -32,6 +32,11 @@ var (
 		false,
 		"collect all available logs from beginning of journal",
 	)
+	debug = flag.Bool(
+		"debug",
+		false,
+		"log debug messages",
+	)
 )
 
 func main() {
@@ -94,7 +99,9 @@ func TailLoop(reader *journald.Reader, writer client.Client) error {
 			err = writer.Handle(ls, ts, msg)
 			comm, ok := r.Fields["_COMM"]
 			if ok {
-				log.Printf("%s", comm)
+				if *debug {
+					log.Printf("%s", comm)
+				}
 			} else {
 				log.Printf("POOP TORPEDO")
 			}

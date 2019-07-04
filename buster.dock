@@ -1,0 +1,24 @@
+FROM debian:buster as builder
+
+RUN apt-get update \
+            && apt-get install -yq libsystemd-dev make wget git build-essential \
+            && rm -rf /var/lib/apt/lists/*
+
+ENV GOVERSION 1.12.1
+
+RUN cd /opt && wget https://storage.googleapis.com/golang/go${GOVERSION}.linux-amd64.tar.gz && \
+    tar zxf go${GOVERSION}.linux-amd64.tar.gz && rm go${GOVERSION}.linux-amd64.tar.gz && \
+    ln -s /opt/go/bin/go /usr/bin/
+
+WORKDIR /root/src/github.com/hikhvar/journaldtail/
+COPY . /root/src/github.com/hikhvar/journaldtail/
+
+ENV distro buster
+
+RUN make clean
+RUN make
+
+FROM debian:buster
+
+COPY --from=builder /root/src/github.com/hikhvar/journaldtail/cmd/journaldtail.buster /usr/bin/journaldtail
+ENTRYPOINT ["/usr/bin/journaldtail"]
