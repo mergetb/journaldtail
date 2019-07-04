@@ -6,19 +6,20 @@
 FROM ubuntu:18.04 as builder
 
 RUN apt-get update \
-            && apt-get install -yq libsystemd-dev make wget \
+            && apt-get install -yq libsystemd-dev make wget git build-essential \
             && rm -rf /var/lib/apt/lists/*
 
-ENV GOVERSION 1.11.4
+ENV GOVERSION 1.12.1
 
 RUN cd /opt && wget https://storage.googleapis.com/golang/go${GOVERSION}.linux-amd64.tar.gz && \
     tar zxf go${GOVERSION}.linux-amd64.tar.gz && rm go${GOVERSION}.linux-amd64.tar.gz && \
     ln -s /opt/go/bin/go /usr/bin/
 
-WORKDIR /root/go/src/github.com/hikhvar/journaldtail/
-COPY . /root/go/src/github.com/hikhvar/journaldtail/
+WORKDIR /root/src/github.com/hikhvar/journaldtail/
+COPY . /root/src/github.com/hikhvar/journaldtail/
 
-RUN make journaldtail
+RUN make clean
+RUN make
 
 # I use this image with Docker Swarm, and during development run:
 #
@@ -31,5 +32,5 @@ RUN make journaldtail
 
 FROM ubuntu:18.04
 
-COPY --from=builder /root/go/src/github.com/hikhvar/journaldtail/journaldtail /usr/bin
+COPY --from=builder /root/src/github.com/hikhvar/journaldtail/cmd/journaldtail /usr/bin
 ENTRYPOINT ["/usr/bin/journaldtail"]

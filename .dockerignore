@@ -1,4 +1,3 @@
-Makefile
 Dockerfile
 .dockerignore
-
+cmd/journaldtail
