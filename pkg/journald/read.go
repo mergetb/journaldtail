@@ -1,7 +1,6 @@
 package journald
 
 import (
-	"log"
 	"time"
 
 	"github.com/coreos/go-systemd/sdjournal"
@@ -35,13 +34,11 @@ func (r *Reader) Next() (*sdjournal.JournalEntry, error) {
 	}
 	if !advanced {
 		r.src.Wait(sdjournal.IndefiniteWait)
-		log.Printf("wait finished")
 		advanced, err = r.advance()
 		if advanced != true {
 			//return nil, errors.New("finished wait but could not advance")
 			return nil, nil
 		}
-		log.Printf("NO bonk")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to advance after wait")
 		}
