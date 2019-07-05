@@ -88,7 +88,6 @@ func TailLoop(reader *journald.Reader, writer client.Client) error {
 		if err != nil {
 			return errors.Wrap(err, "could not get next journal entry")
 		}
-		log.Printf("got next")
 		if r != nil {
 			ls := ToLabelSet(r)
 			ts := journald.ToGolangTime(r.RealtimeTimestamp)
@@ -105,7 +104,9 @@ func TailLoop(reader *journald.Reader, writer client.Client) error {
 					log.Printf("%s", comm)
 				}
 			} else {
-				log.Printf("POOP TORPEDO")
+				if *debug {
+					log.Printf("POOP TORPEDO")
+				}
 			}
 			if err != nil {
 				return errors.Wrap(err, "could not enque systemd logentry")
