@@ -1,44 +1,30 @@
 package journald
 
 import (
+	"log"
 	"time"
 
 	"github.com/coreos/go-systemd/sdjournal"
 	"github.com/pkg/errors"
 )
 
-type Storage interface {
-	Save(position string) error
-	Last() (string, error)
-}
-
 type Reader struct {
-	src     *sdjournal.Journal
-	storage Storage
+	src *sdjournal.Journal
 }
 
-func NewReader(src *sdjournal.Journal, storage Storage) *Reader {
+func NewReader(src *sdjournal.Journal) *Reader {
 	return &Reader{
-		src:     src,
-		storage: storage,
+		src: src,
 	}
-}
-
-// Seek seeks to last position. Either it is the position saved in storage or the tail of the journal
-func (r *Reader) Seek() error {
-	last, err := r.storage.Last()
-	if err != nil {
-		errjd := r.src.SeekTail()
-		if errjd != nil {
-			return errors.Wrapf(errjd, "could not seek to journal tail after storage error: %s", err.Error())
-		}
-	}
-	err = r.src.SeekCursor(last)
-	return errors.Wrapf(err, "could not seek to cursor %s", last)
 }
 
 func (r *Reader) ToTail() error {
-	return r.src.SeekTail()
+	err := r.src.SeekTail()
+	if err != nil {
+		return err
+	}
+	_, err = r.src.Next()
+	return err
 }
 
 // Next blocks until the next journal entry is available
@@ -49,20 +35,18 @@ func (r *Reader) Next() (*sdjournal.JournalEntry, error) {
 	}
 	if !advanced {
 		r.src.Wait(sdjournal.IndefiniteWait)
+		log.Printf("wait finished")
 		advanced, err = r.advance()
 		if advanced != true {
-			// seems to kill logging when logging should not be killed
 			//return nil, errors.New("finished wait but could not advance")
+			return nil, nil
 		}
+		log.Printf("NO bonk")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to advance after wait")
 		}
 	}
 	entry, err := r.src.GetEntry()
-	if err == nil && entry != nil {
-		err = r.storage.Save(entry.Cursor)
-		return entry, errors.Wrap(err, "could not save cursor position to storage")
-	}
 	return entry, errors.Wrap(err, "could not get next entry")
 }
 

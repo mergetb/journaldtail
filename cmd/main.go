@@ -12,8 +12,6 @@ import (
 
 	kitlog "github.com/go-kit/kit/log"
 
-	"github.com/hikhvar/journaldtail/pkg/storage"
-
 	"github.com/coreos/go-systemd/sdjournal"
 	"github.com/grafana/loki/pkg/promtail/client"
 	"github.com/hikhvar/journaldtail/pkg/journald"
@@ -46,14 +44,16 @@ func main() {
 	logger = kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
 	log.SetOutput(kitlog.NewStdlibAdapter(logger))
 	// TODO: Store state on disk
-	memStorage := storage.Memory{}
 	journal, err := sdjournal.NewJournal()
 	if err != nil {
 		log.Fatal(fmt.Sprintf("could not open journal: %s", err.Error()))
 	}
-	reader := journald.NewReader(journal, &memStorage)
+
+	reader := journald.NewReader(journal)
+
 	if !*withHistory {
 		err = reader.ToTail()
+		//err = reader.Seek()
 		if err != nil {
 			log.Fatalf("failed to seek %v", err)
 		}
@@ -68,7 +68,8 @@ func main() {
 		URL: flagext.URLValue{
 			URL: MustParseURL(*lokiHostURL),
 		},
-		Timeout: 30 * time.Second,
+		BatchWait: 1 * time.Second,
+		Timeout:   30 * time.Second,
 	}
 	lokiClient, err := client.New(cfg, logger)
 	if err != nil {
@@ -87,6 +88,7 @@ func TailLoop(reader *journald.Reader, writer client.Client) error {
 		if err != nil {
 			return errors.Wrap(err, "could not get next journal entry")
 		}
+		log.Printf("got next")
 		if r != nil {
 			ls := ToLabelSet(r)
 			ts := journald.ToGolangTime(r.RealtimeTimestamp)
